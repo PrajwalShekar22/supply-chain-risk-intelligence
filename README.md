@@ -5,28 +5,57 @@
 ![Snowflake](https://img.shields.io/badge/Snowflake-Data%20Warehouse-29B5E8)
 ![Airflow](https://img.shields.io/badge/Apache%20Airflow-2.8.4-017CEE)
 ![Tableau](https://img.shields.io/badge/Tableau-Dashboard-E97627)
+![GitHub Actions](https://img.shields.io/badge/CI%2FCD-GitHub%20Actions-2088FF)
 
-## Project Overview
+## Overview
 
-An end-to-end supply chain analytics platform that identifies orders at risk of late delivery before they are delivered. The platform ingests raw order data, transforms it through a multi-layer dbt pipeline, validates data quality with 86 automated tests, and serves insights through interactive Tableau dashboards.
+An enterprise-grade, end-to-end supply chain analytics platform built to identify orders at risk of late delivery before they occur. The platform ingests 180,519 order records and 469,977 web traffic events, transforms them through a fully tested multi-layer dbt pipeline on Snowflake, orchestrates daily execution via Apache Airflow, and delivers actionable risk intelligence through Tableau dashboards.
 
-**Business Question:** How can we identify which orders are at risk of late delivery before they are delivered?
+**Core Business Problem:** Supply chain teams lack early visibility into which orders will arrive late — resulting in reactive responses, customer dissatisfaction, and revenue loss.
 
-**Key Finding:** First Class shipping has a 95.6% late delivery rate — the highest risk shipping mode — compared to Standard Class at 38.09%.
+**Solution:** A predictive analytics pipeline that surfaces late delivery risk signals across shipping modes, markets, regions, and customer segments — enabling proactive intervention before deliveries fail.
+
+**Key Insight:** First Class shipping carries a 95.6% late delivery rate — more than double the risk of Standard Class at 38.09% — representing a critical and actionable operational risk.
+
+---
+
+## Architecture
+
+Raw Data Sources (CSV)
+↓
+Python Ingestion Layer
+(pandas + snowflake-connector-python)
+↓
+Snowflake — RAW Schema
+RAW_SUPPLY_CHAIN (180,519 rows) | RAW_WEB_TRAFFIC (469,977 rows)
+↓
+dbt Cloud — Transformation Layer
+↓
+Snowflake — STAGING Schema
+Views:  stg_orders | stg_customers | stg_products | stg_web_traffic
+Tables: fct_orders | dim_customers | dim_products | dim_geography
+Tables: rpt_delivery_kpis | rpt_revenue_analysis | rpt_risk_prediction | rpt_web_traffic
+↓
+Tableau — Interactive Dashboards
+(connected directly to Snowflake STAGING schema)
+↓
+Apache Airflow — Daily Orchestration (6AM)
+↓
+GitHub Actions — CI/CD on every push to main
 
 ---
 
 ## Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Data Ingestion | Python (pandas, snowflake-connector-python) |
-| Data Warehouse | Snowflake (X-Small warehouse, $400 trial credits) |
-| Data Transformation | dbt Cloud |
-| Orchestration | Apache Airflow 2.8.4 |
-| CI/CD | GitHub Actions |
-| Visualization | Tableau Desktop |
-| Version Control | Git + GitHub |
+| Layer | Technology | Purpose |
+|---|---|---|
+| Ingestion | Python 3.12, pandas, snowflake-connector-python | Load raw CSV data to Snowflake |
+| Data Warehouse | Snowflake (X-Small, AUTO_SUSPEND=60) | Single source of truth |
+| Transformation | dbt Cloud | Multi-layer data modeling and testing |
+| Orchestration | Apache Airflow 2.8.4 | Daily pipeline scheduling |
+| CI/CD | GitHub Actions | Automated build and test on every push |
+| Visualization | Tableau | Interactive risk intelligence dashboards |
+| Version Control | Git + GitHub | Full version history and code management |
 
 ---
 
@@ -36,40 +65,130 @@ An end-to-end supply chain analytics platform that identifies orders at risk of 
 
 | File | Rows | Columns | Description |
 |---|---|---|---|
-| DataCoSupplyChainDataset.csv | 180,519 | 47 | Order-level supply chain data |
-| tokenized_access_logs.csv | 469,977 | 8 | Web traffic clickstream data |
+| DataCoSupplyChainDataset.csv | 180,519 | 47 | Order-item level supply chain transactions |
+| tokenized_access_logs.csv | 469,977 | 8 | Web clickstream and product browsing data |
 
 **Date Range:** January 2015 — January 2018 (3 years)
 
-**Target Variable:** `LATE_DELIVERY_RISK` — binary (1 = late, 0 = not late)
+**Prediction Target:** `LATE_DELIVERY_RISK` (binary — 1 = late, 0 = on time)
 - Late deliveries: 98,977 (54.8%)
 - On time: 81,542 (45.2%)
 
-**Key Dropped Columns (PII):** Customer Email, Customer Password, Customer Street, Product Description, Product Image, Order Zipcode
+**PII Removed at Ingestion:** Customer Email, Customer Password, Customer Street, Product Description, Product Image, Order Zipcode
 
 ---
 
-## Architecture
+## dbt Data Models
 
-CSV Files (Mac)
+### Staging Layer — Views
+
+| Model | Rows | Description |
+|---|---|---|
+| stg_orders | 180,519 | Cleaned orders — cast dates from VARCHAR to TIMESTAMP, derived days_late and delivery_performance columns |
+| stg_customers | 20,652 | Deduplicated customer records using SELECT DISTINCT on CUSTOMER_ID |
+| stg_products | 118 | Deduplicated product catalog using SELECT DISTINCT on PRODUCT_CARD_ID |
+| stg_web_traffic | 469,977 | Cleaned web clickstream with parsed timestamps and renamed columns |
+
+### Marts Layer — Tables
+
+| Model | Description |
+|---|---|
+| fct_orders | Core fact table at order-item grain — delivery performance flags, profitability flags, all financial metrics |
+| dim_customers | Customer dimension — total orders, total sales, late delivery rate, customer value tier (High/Mid/Low) |
+| dim_products | Product dimension — sales metrics, avg profit ratio, late delivery rate, price tier (Premium/Mid Range/Budget) |
+| dim_geography | Geography dimension — late delivery rates across 23 global order regions and 5 markets |
+
+### Reporting Layer — Tables
+
+| Model | Description |
+|---|---|
+| rpt_delivery_kpis | Late delivery KPIs aggregated by order month, year, shipping mode, market, region, customer segment, department |
+| rpt_revenue_analysis | Revenue, profit, discount analysis aggregated by market, segment, department, shipping mode, payment type |
+| rpt_risk_prediction | Risk prediction features aggregated by shipping mode, market, region — ready for ML model inputs |
+| rpt_web_traffic | Web traffic patterns aggregated by department, category, product, visit month, visit hour, time of day |
+
+---
+
+## Data Quality — 86 Automated Tests
+
+| Layer | Tests | Test Types |
+|---|---|---|
+| Staging | 29 | unique, not_null, accepted_values |
+| Marts | 34 | unique, not_null, accepted_values, relationships |
+| Reporting | 21 | not_null, accepted_values |
+| Custom SQL | 2 | Business logic validation |
+| **Total** | **86** | **100% passing — 0 errors, 0 warnings** |
+
+### Custom Business Logic Tests
+- `assert_shipping_days_range` — Validates all shipping days fall between 0 and 6 (confirmed range from dataset)
+- `assert_late_risk_matches_status` — Validates late_delivery_risk=1 always corresponds to delivery_status='Late delivery'
+
+---
+
+## Pipeline Orchestration — Apache Airflow
+
+The full pipeline runs automatically every day at 6AM via Apache Airflow 2.8.4:
+
+Task 1: load_raw_data_to_snowflake
+Python script loads CSV data to Snowflake RAW schema
 ↓
-Python Ingestion Script
+Task 2: dbt_build
+Runs all 12 dbt models across staging, marts, reporting
 ↓
-Snowflake RAW Schema
-(RAW_SUPPLY_CHAIN: 180,519 rows | RAW_WEB_TRAFFIC: 469,977 rows)
+Task 3: dbt_test
+Runs all 86 data quality tests
 ↓
-dbt Cloud Transformation
-↓
-Snowflake STAGING Schema (Views)
-stg_orders | stg_customers | stg_products | stg_web_traffic
-↓
-Snowflake MARTS Schema (Tables)
-fct_orders | dim_customers | dim_products | dim_geography
-↓
-Snowflake REPORTING Schema (Tables)
-rpt_delivery_kpis | rpt_revenue_analysis | rpt_risk_prediction | rpt_web_traffic
-↓
-Tableau Dashboard
+Task 4: verify_row_counts
+Confirms RAW_SUPPLY_CHAIN = 180,519 rows
+Confirms STG_ORDERS = 180,519 rows
+
+**DAG ID:** `supply_chain_risk_pipeline`
+**Schedule:** `0 6 * * *` (daily at 6AM)
+**Executor:** SequentialExecutor
+**Airflow UI:** `http://localhost:8080`
+
+---
+
+## CI/CD — GitHub Actions
+
+Every push to `main` branch automatically triggers:
+
+**DAG ID:** `supply_chain_risk_pipeline`
+**Schedule:** `0 6 * * *` (daily at 6AM)
+**Executor:** SequentialExecutor
+**Airflow UI:** `http://localhost:8080`
+
+---
+
+## CI/CD — GitHub Actions
+
+Every push to `main` branch automatically triggers:
+
+Step 1: Checkout code
+Step 2: Set up Python 3.12
+Step 3: Install dbt-snowflake
+Step 4: Create profiles.yml from GitHub Secrets
+Step 5: dbt deps
+Step 6: dbt build
+Step 7: dbt test
+
+Workflow file: `.github/workflows/dbt_ci.yml`
+
+---
+
+## Key Business Insights
+
+| Metric | Finding |
+|---|---|
+| Highest risk shipping mode | First Class — 95.6% late delivery rate |
+| Lowest risk shipping mode | Standard Class — 38.09% late delivery rate |
+| Second Class late rate | 77.13% |
+| Same Day late rate | 44.83% |
+| Loss-making orders | 33,784 orders carry negative benefit per order |
+| Global coverage | 23 order regions across 5 markets |
+| Unique customers | 20,652 |
+| Unique products | 118 across 50 categories |
+| Data coverage | 3 years — January 2015 to January 2018 |
 
 ---
 
@@ -78,172 +197,73 @@ Tableau Dashboard
 supply-chain-risk-intelligence/
 ├── .github/
 │   └── workflows/
-│       └── dbt_ci.yml              # GitHub Actions CI/CD
+│       └── dbt_ci.yml                          # GitHub Actions CI/CD pipeline
 ├── airflow/
 │   └── dags/
-│       └── supply_chain_pipeline.py # Airflow DAG
+│       └── supply_chain_pipeline.py            # Airflow DAG — daily orchestration
 ├── ingestion/
-│   └── load_to_snowflake.py        # Python ingestion script
+│   └── load_to_snowflake.py                    # Python ingestion script
 ├── models/
 │   ├── staging/
-│   │   ├── sources.yml             # RAW source definitions
-│   │   ├── staging_tests.yml       # Staging data quality tests
-│   │   ├── stg_orders.sql          # Cleaned order data
-│   │   ├── stg_customers.sql       # Deduplicated customer data
-│   │   ├── stg_products.sql        # Deduplicated product data
-│   │   └── stg_web_traffic.sql     # Cleaned web traffic data
+│   │   ├── sources.yml                         # RAW Snowflake source definitions
+│   │   ├── staging_tests.yml                   # Staging layer data quality tests
+│   │   ├── stg_orders.sql
+│   │   ├── stg_customers.sql
+│   │   ├── stg_products.sql
+│   │   └── stg_web_traffic.sql
 │   ├── marts/
-│   │   ├── marts_tests.yml         # Mart data quality tests
-│   │   ├── fct_orders.sql          # Fact table - order items
-│   │   ├── dim_customers.sql       # Customer dimension
-│   │   ├── dim_products.sql        # Product dimension
-│   │   └── dim_geography.sql       # Geography dimension
+│   │   ├── marts_tests.yml                     # Marts layer data quality tests
+│   │   ├── fct_orders.sql
+│   │   ├── dim_customers.sql
+│   │   ├── dim_products.sql
+│   │   └── dim_geography.sql
 │   └── reporting/
-│       ├── reporting_tests.yml     # Reporting data quality tests
-│       ├── rpt_delivery_kpis.sql   # Delivery KPI aggregations
-│       ├── rpt_revenue_analysis.sql # Revenue analysis
-│       ├── rpt_risk_prediction.sql  # Risk prediction features
-│       └── rpt_web_traffic.sql     # Web traffic analysis
+│       ├── reporting_tests.yml                 # Reporting layer data quality tests
+│       ├── rpt_delivery_kpis.sql
+│       ├── rpt_revenue_analysis.sql
+│       ├── rpt_risk_prediction.sql
+│       └── rpt_web_traffic.sql
 ├── tests/
-│   ├── assert_shipping_days_range.sql      # Business logic test
-│   └── assert_late_risk_matches_status.sql # Business logic test
-└── dbt_project.yml                 # dbt project configuration
+│   ├── assert_shipping_days_range.sql          # Custom business logic test
+│   └── assert_late_risk_matches_status.sql     # Custom business logic test
+└── dbt_project.yml                             # dbt project configuration
 
----
-
-## dbt Models
-
-### Staging Layer (Views)
-| Model | Source | Description |
-|---|---|---|
-| stg_orders | RAW_SUPPLY_CHAIN | Cleaned order data, cast dates, derived metrics |
-| stg_customers | RAW_SUPPLY_CHAIN | Deduplicated customer records |
-| stg_products | RAW_SUPPLY_CHAIN | Deduplicated product catalog |
-| stg_web_traffic | RAW_WEB_TRAFFIC | Cleaned web clickstream data |
-
-### Marts Layer (Tables)
-| Model | Description |
-|---|---|
-| fct_orders | Fact table - 180,519 rows - core analytics table |
-| dim_customers | Customer dimension with order metrics and value tiers |
-| dim_products | Product dimension with sales metrics and price tiers |
-| dim_geography | Geography dimension with late delivery rates by region |
-
-### Reporting Layer (Tables)
-| Model | Description |
-|---|---|
-| rpt_delivery_kpis | Late delivery KPIs aggregated by time, shipping mode, market |
-| rpt_revenue_analysis | Revenue and profit analysis by segment and department |
-| rpt_risk_prediction | Risk prediction features for ML model inputs |
-| rpt_web_traffic | Web traffic patterns by department, category, time of day |
-
----
-
-## Data Quality
-
-**86 automated dbt tests across all layers:**
-
-| Layer | Tests | Types |
-|---|---|---|
-| Staging | 29 | unique, not_null, accepted_values |
-| Marts | 34 | unique, not_null, accepted_values, relationships |
-| Reporting | 21 | not_null, accepted_values |
-| Custom SQL | 2 | Business logic tests |
-| **Total** | **86** | **All passing** |
-
-**Custom Business Logic Tests:**
-- `assert_shipping_days_range` — validates shipping days between 0 and 6
-- `assert_late_risk_matches_status` — validates late_delivery_risk=1 always maps to 'Late delivery' status
-
----
-
-## Key Business Insights
-
-| Insight | Finding |
-|---|---|
-| Highest risk shipping mode | First Class — 95.6% late delivery rate |
-| Lowest risk shipping mode | Standard Class — 38.09% late delivery rate |
-| Orders with negative profit | 33,784 orders (18.7%) |
-| Date range | Jan 2015 — Jan 2018 (3 years) |
-| Total unique customers | 20,652 |
-| Total unique products | 118 |
-| Total unique orders | 65,752 |
-
----
-
-## Pipeline Orchestration (Airflow)
-
-The pipeline runs daily at 6AM via Apache Airflow:
-Task 1: load_raw_data_to_snowflake
-↓
-Task 2: dbt_build
-↓
-Task 3: dbt_test
-↓
-Task 4: verify_row_counts
-
-**Airflow UI:** `http://localhost:8080`
-**DAG:** `supply_chain_risk_pipeline`
-**Schedule:** `0 6 * * *` (daily at 6AM)
-
----
-
-## CI/CD (GitHub Actions)
-
-Every push to `main` branch automatically triggers:
-1. Install dbt-snowflake
-2. Create profiles.yml from GitHub Secrets
-3. `dbt deps`
-4. `dbt build`
-5. `dbt test`
-
----
-
-## Snowflake Setup
-
-```sql
--- Database
-SUPPLY_CHAIN_DB
-
--- Schemas
-RAW      -- Raw ingested data
-STAGING  -- dbt transformed views and tables
-
--- Warehouse
-SUPPLY_CHAIN_WH (X-Small, AUTO_SUSPEND=60)
-```
 
 ---
 
 ## How to Run
 
-### 1. Install dependencies
+### Prerequisites
 ```bash
-pip install snowflake-connector-python pandas
+# Python dependencies
+pip install snowflake-connector-python==4.4.0 pandas==2.2.2
+
+# Airflow environment
+conda create -n airflow_env python=3.10 -y
+conda activate airflow_env
+pip install "apache-airflow==2.8.4" --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-2.8.4/constraints-3.10.txt"
 ```
 
-### 2. Run Python ingestion
+### 1. Run Python Ingestion
 ```bash
 cd ingestion
 python3 load_to_snowflake.py
 ```
 
-### 3. Run dbt models
+### 2. Run dbt Pipeline
 ```bash
 dbt build
-```
-
-### 4. Run dbt tests
-```bash
 dbt test
 ```
 
-### 5. Start Airflow
+### 3. Start Airflow
 ```bash
 conda activate airflow_env
 export AIRFLOW_HOME=~/supply-chain-risk-intelligence/airflow
 airflow webserver --port 8080
+# In a second terminal tab:
 airflow scheduler
+# Open browser: http://localhost:8080
 ```
 
 ---
@@ -251,7 +271,10 @@ airflow scheduler
 ## Author
 
 **Prajwal Gorkhar Chandrashekar**
-- MS Business Analytics, Supply Chain Track — ASU W.P. Carey School of Business (GPA 3.75)
+
+Data Analyst with 2+ years of experience across machine learning, predictive analytics, computer vision, and business operations. Dual master's degree holder with hands-on expertise across the full modern data stack — from raw ingestion to production-grade analytics pipelines.
+
 - LinkedIn: [linkedin.com/in/prajwalshekar](https://linkedin.com/in/prajwalshekar)
 - GitHub: [github.com/PrajwalShekar22](https://github.com/PrajwalShekar22)
 - Portfolio: [datascienceportfol.io/pgorkhar](https://datascienceportfol.io/pgorkhar)
+
