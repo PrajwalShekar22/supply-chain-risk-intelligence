@@ -21,20 +21,31 @@ An enterprise-grade, end-to-end supply chain analytics platform built to identif
 
 ## Architecture
 
-## Architecture
-
 ```mermaid
 flowchart TD
-    A[CSV Files on Mac\nDataCoSupplyChainDataset.csv\ntokenized_access_logs.csv] --> B[Python Ingestion Layer\npandas + snowflake-connector-python]
-    B --> C[Snowflake RAW Schema\nRAW_SUPPLY_CHAIN 180519 rows\nRAW_WEB_TRAFFIC 469977 rows]
-    C --> D[dbt Cloud Transformation Layer]
-    D --> E[Snowflake STAGING Schema\nViews: stg_orders stg_customers stg_products stg_web_traffic]
-    E --> F[Snowflake STAGING Schema\nTables: fct_orders dim_customers dim_products dim_geography]
-    F --> G[Snowflake STAGING Schema\nTables: rpt_delivery_kpis rpt_revenue_analysis rpt_risk_prediction rpt_web_traffic]
-    G --> H[Tableau Interactive Dashboards]
-    D --> I[Apache Airflow Daily 6AM Orchestration]
-    D --> J[GitHub Actions CI/CD on every push to main]
+    A["Raw Data Sources CSV\nDataCoSupplyChainDataset.csv 180519 rows\ntokenized_access_logs.csv 469977 rows"]
+    B["Python Ingestion Layer\npandas + snowflake-connector-python"]
+    C["Snowflake RAW Schema\nRAW_SUPPLY_CHAIN 180519 rows\nRAW_WEB_TRAFFIC 469977 rows"]
+    D["dbt Cloud Transformation Layer"]
+    E["Snowflake STAGING Schema Views\nstg_orders | stg_customers | stg_products | stg_web_traffic"]
+    F["Snowflake STAGING Schema Mart Tables\nfct_orders | dim_customers | dim_products | dim_geography"]
+    G["Snowflake STAGING Schema Reporting Tables\nrpt_delivery_kpis | rpt_revenue_analysis\nrpt_risk_prediction | rpt_web_traffic"]
+    H["Tableau Interactive Dashboards\nConnected to Snowflake STAGING schema"]
+    I["Apache Airflow 2.8.4\nDaily Orchestration at 6AM"]
+    J["GitHub Actions CI/CD\nAutomated dbt build and test on every push"]
+
+    A --> B
+    B --> C
+    C --> D
+    D --> E
+    E --> F
+    F --> G
+    G --> H
+    D --> I
+    D --> J
 ```
+
+---
 
 ---
 
@@ -186,41 +197,40 @@ Workflow file: `.github/workflows/dbt_ci.yml`
 ---
 
 ## Project Structure
-
 supply-chain-risk-intelligence/
 ├── .github/
 │   └── workflows/
-│       └── dbt_ci.yml                          # GitHub Actions CI/CD pipeline
+│       └── dbt_ci.yml
 ├── airflow/
 │   └── dags/
-│       └── supply_chain_pipeline.py            # Airflow DAG — daily orchestration
+│       └── supply_chain_pipeline.py
 ├── ingestion/
-│   └── load_to_snowflake.py                    # Python ingestion script
+│   └── load_to_snowflake.py
 ├── models/
 │   ├── staging/
-│   │   ├── sources.yml                         # RAW Snowflake source definitions
-│   │   ├── staging_tests.yml                   # Staging layer data quality tests
+│   │   ├── sources.yml
+│   │   ├── staging_tests.yml
 │   │   ├── stg_orders.sql
 │   │   ├── stg_customers.sql
 │   │   ├── stg_products.sql
 │   │   └── stg_web_traffic.sql
 │   ├── marts/
-│   │   ├── marts_tests.yml                     # Marts layer data quality tests
+│   │   ├── marts_tests.yml
 │   │   ├── fct_orders.sql
 │   │   ├── dim_customers.sql
 │   │   ├── dim_products.sql
 │   │   └── dim_geography.sql
 │   └── reporting/
-│       ├── reporting_tests.yml                 # Reporting layer data quality tests
+│       ├── reporting_tests.yml
 │       ├── rpt_delivery_kpis.sql
 │       ├── rpt_revenue_analysis.sql
 │       ├── rpt_risk_prediction.sql
 │       └── rpt_web_traffic.sql
 ├── tests/
-│   ├── assert_shipping_days_range.sql          # Custom business logic test
-│   └── assert_late_risk_matches_status.sql     # Custom business logic test
-└── dbt_project.yml                             # dbt project configuration
-
+│   ├── assert_shipping_days_range.sql
+│   └── assert_late_risk_matches_status.sql
+└── dbt_project.yml
+---
 
 ---
 
