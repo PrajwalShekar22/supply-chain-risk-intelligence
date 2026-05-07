@@ -21,27 +21,20 @@ An enterprise-grade, end-to-end supply chain analytics platform built to identif
 
 ## Architecture
 
-Raw Data Sources (CSV)
-↓
-Python Ingestion Layer
-(pandas + snowflake-connector-python)
-↓
-Snowflake — RAW Schema
-RAW_SUPPLY_CHAIN (180,519 rows) | RAW_WEB_TRAFFIC (469,977 rows)
-↓
-dbt Cloud — Transformation Layer
-↓
-Snowflake — STAGING Schema
-Views:  stg_orders | stg_customers | stg_products | stg_web_traffic
-Tables: fct_orders | dim_customers | dim_products | dim_geography
-Tables: rpt_delivery_kpis | rpt_revenue_analysis | rpt_risk_prediction | rpt_web_traffic
-↓
-Tableau — Interactive Dashboards
-(connected directly to Snowflake STAGING schema)
-↓
-Apache Airflow — Daily Orchestration (6AM)
-↓
-GitHub Actions — CI/CD on every push to main
+## Architecture
+
+```mermaid
+flowchart TD
+    A[CSV Files on Mac\nDataCoSupplyChainDataset.csv\ntokenized_access_logs.csv] --> B[Python Ingestion Layer\npandas + snowflake-connector-python]
+    B --> C[Snowflake RAW Schema\nRAW_SUPPLY_CHAIN 180519 rows\nRAW_WEB_TRAFFIC 469977 rows]
+    C --> D[dbt Cloud Transformation Layer]
+    D --> E[Snowflake STAGING Schema\nViews: stg_orders stg_customers stg_products stg_web_traffic]
+    E --> F[Snowflake STAGING Schema\nTables: fct_orders dim_customers dim_products dim_geography]
+    F --> G[Snowflake STAGING Schema\nTables: rpt_delivery_kpis rpt_revenue_analysis rpt_risk_prediction rpt_web_traffic]
+    G --> H[Tableau Interactive Dashboards]
+    D --> I[Apache Airflow Daily 6AM Orchestration]
+    D --> J[GitHub Actions CI/CD on every push to main]
+```
 
 ---
 
