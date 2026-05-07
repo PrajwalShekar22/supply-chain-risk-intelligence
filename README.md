@@ -198,38 +198,39 @@ Workflow file: `.github/workflows/dbt_ci.yml`
 
 ## Project Structure
 supply-chain-risk-intelligence/
-├── .github/
-│   └── workflows/
-│       └── dbt_ci.yml
-├── airflow/
-│   └── dags/
-│       └── supply_chain_pipeline.py
-├── ingestion/
-│   └── load_to_snowflake.py
-├── models/
-│   ├── staging/
-│   │   ├── sources.yml
-│   │   ├── staging_tests.yml
-│   │   ├── stg_orders.sql
-│   │   ├── stg_customers.sql
-│   │   ├── stg_products.sql
-│   │   └── stg_web_traffic.sql
-│   ├── marts/
-│   │   ├── marts_tests.yml
-│   │   ├── fct_orders.sql
-│   │   ├── dim_customers.sql
-│   │   ├── dim_products.sql
-│   │   └── dim_geography.sql
-│   └── reporting/
-│       ├── reporting_tests.yml
-│       ├── rpt_delivery_kpis.sql
-│       ├── rpt_revenue_analysis.sql
-│       ├── rpt_risk_prediction.sql
-│       └── rpt_web_traffic.sql
-├── tests/
-│   ├── assert_shipping_days_range.sql
-│   └── assert_late_risk_matches_status.sql
-└── dbt_project.yml
+.github/
+workflows/
+dbt_ci.yml
+airflow/
+dags/
+supply_chain_pipeline.py
+ingestion/
+load_to_snowflake.py
+models/
+staging/
+sources.yml
+staging_tests.yml
+stg_orders.sql
+stg_customers.sql
+stg_products.sql
+stg_web_traffic.sql
+marts/
+marts_tests.yml
+fct_orders.sql
+dim_customers.sql
+dim_products.sql
+dim_geography.sql
+reporting/
+reporting_tests.yml
+rpt_delivery_kpis.sql
+rpt_revenue_analysis.sql
+rpt_risk_prediction.sql
+rpt_web_traffic.sql
+tests/
+assert_shipping_days_range.sql
+assert_late_risk_matches_status.sql
+dbt_project.yml
+
 ---
 
 ---
