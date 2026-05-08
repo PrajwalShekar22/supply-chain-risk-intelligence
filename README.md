@@ -273,6 +273,40 @@ airflow scheduler
 
 ---
 
+
+---
+
+## Machine Learning Model
+
+### Objective
+Predict LATE_DELIVERY_RISK at the order level using pre-shipment features available at the time of order placement.
+
+### Models Trained and Compared
+| Model | Accuracy | Precision | Recall | F1 Score | AUC-ROC |
+|---|---|---|---|---|---|
+| XGBoost | 69.64% | 84.23% | 54.92% | 66.49% | 0.7305 |
+| LightGBM | 69.65% | 84.67% | 54.52% | 66.33% | 0.7308 |
+
+Winner: LightGBM selected based on highest AUC-ROC score.
+
+### Experiment Tracking
+All experiments tracked in MLflow with full parameter logging and model artifacts.
+Experiment name: supply_chain_late_delivery_prediction
+MLflow UI: http://localhost:5000
+
+### SHAP Feature Importance
+SHAP analysis confirms SHIPPING_MODE is the dominant predictor of late delivery risk.
+DAYS_FOR_SHIPMENT_SCHEDULED is the second most important feature.
+
+### Key Finding
+Shipping mode selection at order time is the single most controllable risk factor for late delivery prediction.
+
+### ML Files
+- ml/train_model.py — training script
+- ml/outputs/best_model.pkl — saved LightGBM model
+- ml/outputs/shap_summary.png — SHAP feature importance plot
+- ml/outputs/predictions.csv — test set predictions
+
 ## Author
 
 **Prajwal Gorkhar Chandrashekar**
