@@ -13,7 +13,7 @@ An enterprise-grade, end-to-end supply chain analytics platform built to identif
 
 **Core Business Problem:** Supply chain teams lack early visibility into which orders will arrive late, resulting in reactive responses, customer dissatisfaction, and revenue loss.
 
-**Solution:** A predictive analytics pipeline that surfaces late delivery risk signals across shipping modes, markets, regions, and customer segments — enabling proactive intervention before deliveries fail.
+**Solution:** A predictive analytics pipeline that surfaces late delivery risk signals across shipping modes, markets, regions, and customer segments, enabling proactive intervention before deliveries fail.
 
 **Key Insight:** First Class shipping has a 95.6% late-delivery rate, more than double the 38.09% for Standard Class, representing a critical, actionable operational risk.
 
@@ -287,7 +287,7 @@ Predict LATE_DELIVERY_RISK at the order level using pre-shipment features availa
 | XGBoost | 69.64% | 84.23% | 54.92% | 66.49% | 0.7305 |
 | LightGBM | 69.65% | 84.67% | 54.52% | 66.33% | 0.7308 |
 
-Winner: LightGBM selected based on highest AUC-ROC score.
+Winner: LightGBM selected based on the highest AUC-ROC score.
 
 ### Experiment Tracking
 All experiments tracked in MLflow with full parameter logging and model artifacts.
@@ -299,7 +299,7 @@ SHAP analysis confirms SHIPPING_MODE is the dominant predictor of late delivery 
 DAYS_FOR_SHIPMENT_SCHEDULED is the second most important feature.
 
 ### Key Finding
-Shipping mode selection at order time is the single most controllable risk factor for late delivery prediction.
+Shipping mode selection at order time is the single most controllable risk factor for predicting late delivery.
 
 ### ML Files
 - ml/train_model.py — training script
@@ -311,7 +311,7 @@ Shipping mode selection at order time is the single most controllable risk facto
 
 **Prajwal Gorkhar Chandrashekar**
 
-Data Analyst with 2+ years of experience across machine learning, predictive analytics, computer vision, and business operations. Dual master's degree holder with hands-on expertise across the full modern data stack — from raw ingestion to production-grade analytics pipelines.
+Data Analyst with 2+ years of experience across machine learning, predictive analytics, computer vision, and business operations. Dual master's degree holder with hands-on expertise across the full modern data stack from raw ingestion to production-grade analytics pipelines.
 
 - LinkedIn: [linkedin.com/in/prajwalshekar](https://linkedin.com/in/prajwalshekar)
 - GitHub: [github.com/PrajwalShekar22](https://github.com/PrajwalShekar22)
