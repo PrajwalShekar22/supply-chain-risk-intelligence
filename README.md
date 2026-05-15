@@ -11,11 +11,11 @@
 
 An enterprise-grade, end-to-end supply chain analytics platform built to identify orders at risk of late delivery before they occur. The platform ingests 180,519 order records and 469,977 web traffic events, transforms them through a fully tested multi-layer dbt pipeline on Snowflake, orchestrates daily execution via Apache Airflow, and delivers actionable risk intelligence through Tableau dashboards.
 
-**Core Business Problem:** Supply chain teams lack early visibility into which orders will arrive late — resulting in reactive responses, customer dissatisfaction, and revenue loss.
+**Core Business Problem:** Supply chain teams lack early visibility into which orders will arrive late, resulting in reactive responses, customer dissatisfaction, and revenue loss.
 
 **Solution:** A predictive analytics pipeline that surfaces late delivery risk signals across shipping modes, markets, regions, and customer segments — enabling proactive intervention before deliveries fail.
 
-**Key Insight:** First Class shipping carries a 95.6% late delivery rate — more than double the risk of Standard Class at 38.09% — representing a critical and actionable operational risk.
+**Key Insight:** First Class shipping has a 95.6% late-delivery rate, more than double the 38.09% for Standard Class, representing a critical, actionable operational risk.
 
 ---
 
